@@ -49,10 +49,53 @@ app.post('/todos', function(req, res){
 	res.json(body);
 
 });
+
+app.delete('/todos/:id', function(req, res){
+	var todoId = parseInt(req.params.id, 10);
+	var matchedIdTodos = _.findWhere(todos,{id: todoId});
+
+
+	if(!matchedIdTodos){
+		res.status(404).json('Error!! nothing found in the id!!');
+	}else{
+		todos = _.without(todos, matchedIdTodos);
+		res.json(matchedIdTodos);
+	}
+});
+app.put('/todos/:id', function(req, res){
+	var todoId = parseInt(req.params.id, 10);
+	var matchedIdTodos = _.findWhere(todos,{id: todoId});
+
+		var body = _.pick(req.body,'description', 'completed');
+		var validAttribute={};
+
+
+		if(!matchedIdTodos){
+			return res.status(404).send();
+		}
+		if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)){
+			validAttribute.completed =body.completed;
+
+		}else if(body.hasOwnProperty('completed')){
+			res.status(404).send();
+
+		}
+		if(body.hasOwnProperty('description')&& _.isString(body.description) && body.description.trim().length > 0){
+			validAttribute.description = body.description;
+		}else if (body.hasOwnProperty('description')){
+			res.status(404).send();
+		}
+
+
+		_.extend(matchedIdTodos, validAttribute);
+		res.json(matchedIdTodos);
+
+
+});
 // app.get('/todos/:id', function(req, res){
 // 	var todoId = parseInt(req.params.id, 10);
 // 	var matchedId;
-// 	todos.forEach(function(todo){
+// 	todos.forEach(function(todo){x
 // 		if(todoId=== todo.id){
 // 			matchedId = todoId;
 // 		}
