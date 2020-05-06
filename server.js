@@ -43,34 +43,39 @@ app.get('/todos', function(req, res) {
 });
 app.get('/todos/:id', function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
-	var matchedIdTodos = _.findWhere(todos, {
-		id: todoId
+	db.todo.findByPk(todoId).then(function(todo){
+		if(!!todo){
+			res.json(todo.toJSON());
+		}else{
+			res.status(404).send('Id could not the found!!!');
+		}
+
+	}, function(e){
+		res.status(500).send();
+
 	});
-
-	// var matchedIdTodos;
-
-	// todos.forEach(function(todo){
-	// 	if (todoId === todo.id){
-	// 		matchedIdTodos = todo;
-	// 	}
+	// var matchedIdTodos = _.findWhere(todos, {
+	// 	id: todoId
 	// });
-	if (matchedIdTodos) {
-		res.json(matchedIdTodos);
-	} else {
-		res.status(404).send();
 
-	}
+	// // var matchedIdTodos;
+
+	// // todos.forEach(function(todo){
+	// // 	if (todoId === todo.id){
+	// // 		matchedIdTodos = todo;
+	// // 	}
+	// // });
+	// if (matchedIdTodos) {
+	// 	res.json(matchedIdTodos);
+	// } else {
+	// 	res.status(404).send();
+
+	// }
 
 });
 app.post('/todos', function(req, res) {
 	var body = _.pick(req.body, 'description', 'completed');
-	// db.todo.create(body).then(function(todo){
-	// 	if(todo){
-	// 		return res.status(200).send(todo.toJSON());
-	// 	}else{
-	// 		return res.status(400).json(e);
-	// 	}
-	// });
+
 
 	db.todo.create(body).then(function(todo){
 		res.json(todo.toJSON());
