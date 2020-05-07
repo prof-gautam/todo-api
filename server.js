@@ -1,7 +1,9 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
+var Sequelize = require('sequelize');
 var db = require('./db.js');
+const Op = Sequelize.Op;
 var app = express();
 PORT = process.env.PORT || 3000;
 var todos = [];
@@ -28,12 +30,14 @@ app.get('/todos', function(req, res) {
 	}
 	if (query.hasOwnProperty('q') && query.q.length > 0) {
 		where.description = {
-			[Op.like]: '%' + query + '%'
-		}
+			[Op.like]: '%' + query.q + '%'
+		};
 	}
-	db.todo.findAll({where: where}).then(function(todos){
+	db.todo.findAll({
+		where: where
+	}).then(function(todos) {
 		res.json(todos);
-	}, function(e){
+	}, function(e) {
 		res.status(500).send();
 	});
 
@@ -118,48 +122,51 @@ app.post('/todos', function(req, res) {
 
 app.delete('/todos/:id', function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
-	var matchedIdTodos = _.findWhere(todos, {
-		id: todoId
+	db.todo.destroy({
+		where: {
+			id: todoId
+		}
+	}).then(function(myvar) {
+		if (myvar === 0) {
+			res.status(404).json({
+				error: 'No todo found!!'
+			})
+		} else {
+			res.status(204).send();
+		}
+
+	}, function() {
+		res.status(500).send();
 	});
-
-
-	if (!matchedIdTodos) {
-		res.status(404).json('Error!! nothing found in the id!!');
-	} else {
-		todos = _.without(todos, matchedIdTodos);
-		res.json(matchedIdTodos);
-	}
 });
 app.put('/todos/:id', function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
-	var matchedIdTodos = _.findWhere(todos, {
-		id: todoId
-	});
 
 	var body = _.pick(req.body, 'description', 'completed');
-	var validAttribute = {};
+	var attribute = {};
 
 
-	if (!matchedIdTodos) {
-		return res.status(404).send();
-	}
-	if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
-		validAttribute.completed = body.completed;
-
-	} else if (body.hasOwnProperty('completed')) {
-		res.status(404).send();
+	if (body.hasOwnProperty('completed')) {
+		attribute.completed = body.completed;
 
 	}
-	if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
-		validAttribute.description = body.description;
-	} else if (body.hasOwnProperty('description')) {
-		res.status(404).send();
+	if (body.hasOwnProperty('description')) {
+		attribute.description = body.description;
 	}
+	db.todo.findByPk(todoId).then(function(todo) {
+		if (todo) {
+			todo.update(attribute).then(function(todo) {
+				res.json(todo.toJSON());
+			}, function(e) {
+				res.status(400).json(e);
+			});
 
-
-	_.extend(matchedIdTodos, validAttribute);
-	res.json(matchedIdTodos);
-
+		} else {
+			res.status(404).send();
+		}
+	}, function() {
+		res.status(500).send();
+	});
 
 });
 // app.get('/todos/:id', function(req, res){
