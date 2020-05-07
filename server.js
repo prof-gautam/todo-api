@@ -31,13 +31,11 @@ app.get('/todos', function(req, res) {
 			[Op.like]: '%' + query + '%'
 		}
 	}
-	
-	db.todo.findAll({where: where}).map(el => el.get({ plain: true })).then(function(todos){
+	db.todo.findAll({where: where}).then(function(todos){
 		res.json(todos);
 	}, function(e){
 		res.status(500).send();
 	});
-
 
 
 
