@@ -19,38 +19,59 @@ app.get('/', function(req, res) {
 
 //GET/ todos/completed=true&q=string
 app.get('/todos', function(req, res) {
-	var queryParams = req.query;
-	var filteredTodos = todos;
-	if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
-		filteredTodos = _.where(filteredTodos, {
-			'completed': true
-		});
-	} else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
-		filteredTodos = _.where(filteredTodos, {
-			'completed': false
-		});
-
+	var query = req.query;
+	var where = {};
+	if (query.hasOwnProperty('completed') && query.completed === 'true') {
+		where.completed = true;
+	} else if (query.hasOwnProperty('completed') && query.completed === 'false') {
+		where.completed = false;
 	}
-
-
-	if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
-		filteredTodos = _.filter(filteredTodos, function(todo) {
-			return todo.description.indexOf(queryParams.q) > -1;
-		});
+	if (query.hasOwnProperty('q') && query.q.length > 0) {
+		where.description = {
+			[Op.like]: '%' + query + '%'
+		}
 	}
+	
+	db.todo.findAll({where: where}).map(el => el.get({ plain: true })).then(function(todos){
+		res.json(todos);
+	}, function(e){
+		res.status(500).send();
+	});
 
-	res.json(filteredTodos);
+
+
+
+	// var filteredTodos = todos;
+	// if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
+	// 	filteredTodos = _.where(filteredTodos, {
+	// 		'completed': true
+	// 	});
+	// } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
+	// 	filteredTodos = _.where(filteredTodos, {
+	// 		'completed': false
+	// 	});
+
+	// }
+
+
+	// if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
+	// 	filteredTodos = _.filter(filteredTodos, function(todo) {
+	// 		return todo.description.indexOf(queryParams.q) > -1;
+	// 	});
+	// }
+
+	// res.json(filteredTodos);
 });
 app.get('/todos/:id', function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
-	db.todo.findByPk(todoId).then(function(todo){
-		if(!!todo){
+	db.todo.findByPk(todoId).then(function(todo) {
+		if (!!todo) {
 			res.json(todo.toJSON());
-		}else{
+		} else {
 			res.status(404).send('Id could not the found!!!');
 		}
 
-	}, function(e){
+	}, function(e) {
 		res.status(500).send();
 
 	});
@@ -77,9 +98,9 @@ app.post('/todos', function(req, res) {
 	var body = _.pick(req.body, 'description', 'completed');
 
 
-	db.todo.create(body).then(function(todo){
+	db.todo.create(body).then(function(todo) {
 		res.json(todo.toJSON());
-	}, function(e){
+	}, function(e) {
 		res.ststud(400).json(e);
 	});
 
@@ -158,9 +179,8 @@ app.put('/todos/:id', function(req, res) {
 // 	}
 // });
 
-db.sequelize.sync().then(function(){
+db.sequelize.sync().then(function() {
 	app.listen(PORT, function() {
-	console.log('Express listening the port: ' + PORT + '!!!');
+		console.log('Express listening the port: ' + PORT + '!!!');
+	});
 });
-});
-
