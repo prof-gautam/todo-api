@@ -6,7 +6,7 @@ var db = require('./db.js');
 const Op = Sequelize.Op;
 var app = express();
 PORT = process.env.PORT || 3000;
-var todos = [];
+var todo = [];
 var todoNextId = 1;
 
 app.use(bodyParser.json());
@@ -20,7 +20,7 @@ app.get('/', function(req, res) {
 
 
 //GET/ todos/completed=true&q=string
-app.get('/todos', function(req, res) {
+app.get('/todo', function(req, res) {
 	var query = req.query;
 	var where = {};
 	if (query.hasOwnProperty('completed') && query.completed === 'true') {
@@ -64,7 +64,7 @@ app.get('/todos', function(req, res) {
 
 	// res.json(filteredTodos);
 });
-app.get('/todos/:id', function(req, res) {
+app.get('/todo/:id', function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 	db.todo.findByPk(todoId).then(function(todo) {
 		if (!!todo) {
@@ -96,14 +96,14 @@ app.get('/todos/:id', function(req, res) {
 	// }
 
 });
-app.post('/todos', function(req, res) {
+app.post('/todo', function(req, res) {
 	var body = _.pick(req.body, 'description', 'completed');
 
 
 	db.todo.create(body).then(function(todo) {
 		res.json(todo.toJSON());
 	}, function(e) {
-		res.ststud(400).json(e);
+		res.status(400).json(e);
 	});
 
 
@@ -120,7 +120,7 @@ app.post('/todos', function(req, res) {
 
 });
 
-app.delete('/todos/:id', function(req, res) {
+app.delete('/todo/:id', function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 	db.todo.destroy({
 		where: {
@@ -139,7 +139,7 @@ app.delete('/todos/:id', function(req, res) {
 		res.status(500).send();
 	});
 });
-app.put('/todos/:id', function(req, res) {
+app.put('/todo/:id', function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 
 	var body = _.pick(req.body, 'description', 'completed');
@@ -169,20 +169,17 @@ app.put('/todos/:id', function(req, res) {
 	});
 
 });
-// app.get('/todos/:id', function(req, res){
-// 	var todoId = parseInt(req.params.id, 10);
-// 	var matchedId;
-// 	todos.forEach(function(todo){x
-// 		if(todoId=== todo.id){
-// 			matchedId = todoId;
-// 		}
-// 	});
-// 	if(matchedId){
-// 		res.json(matchedId);
-// 	}else{
-// 		res.status(404).send();
-// 	}
-// });
+
+app.post('/user', function(req, res){
+	var body = _.pick(req.body, 'email', 'password');
+
+	db.user.create(body).then(function(user) {
+		res.json(user.toPublicJSON());
+	}, function(e) {
+		res.status(400).json(e);
+	});
+
+});
 
 db.sequelize.sync().then(function() {
 	app.listen(PORT, function() {
