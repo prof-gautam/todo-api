@@ -5,6 +5,7 @@ var Sequelize = require('sequelize');
 var db = require('./db.js');
 const Op = Sequelize.Op;
 var app = express();
+var bcrypt = require('bcrypt');
 PORT = process.env.PORT || 3000;
 var todo = [];
 var todoNextId = 1;
@@ -170,7 +171,7 @@ app.put('/todo/:id', function(req, res) {
 
 });
 
-app.post('/user', function(req, res){
+app.post('/user', function(req, res) {
 	var body = _.pick(req.body, 'email', 'password');
 
 	db.user.create(body).then(function(user) {
@@ -181,7 +182,40 @@ app.post('/user', function(req, res){
 
 });
 
-db.sequelize.sync().then(function() {
+
+app.post('/user/login', function(req, res) {
+	var body = _.pick(req.body, 'email', 'password');
+	if (typeof body.email !== 'string' || typeof body.password !== 'string') {
+		return reject();
+	}
+	db.user.findOne({
+		where: {
+			email: body.email
+		}
+	}).then(function(user) {
+		if (!user || !bcrypt.compareSync(body.password, user.get('password_hash'))) {
+			return res.status(401).send();
+		}
+		var token = user.generateToken('authentication');
+		if (token) {
+			res.header('Auth', token).json(user.toPublicJSON());
+		} else {
+			return res.status(401).send();
+
+		}
+
+	}, function(e) {
+		res.status(500).send();
+
+	});
+
+
+
+});
+
+db.sequelize.sync({
+	force: true
+}).then(function() {
 	app.listen(PORT, function() {
 		console.log('Express listening the port: ' + PORT + '!!!');
 	});
